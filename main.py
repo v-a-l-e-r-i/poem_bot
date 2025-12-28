@@ -29,7 +29,6 @@ async def main():
 
     dp.message.register(start_handler, CommandStart())
     dp.include_router(submission_router)
-    print(f"TOKEN: {BOT_TOKEN}")
 
     await dp.start_polling(bot)
 
