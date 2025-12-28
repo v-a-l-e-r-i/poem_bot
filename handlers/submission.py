@@ -1,9 +1,15 @@
+import asyncio
+
 from aiogram import Router
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from datetime import datetime
 
 from states.submission import SubmissionStates
+
+from services.google_sheets import append_submission
+import gspread
+
 
 router = Router()
 
@@ -93,10 +99,10 @@ async def receive_socials(message: Message, state: FSMContext):
         "decision_date": ""
     }
 
-    # 🔹 ПОКИ ЩО — просто дивимось, що зберігається
-    print("DATA FOR TABLE:")
-    for k, v in submission_data.items():
-        print(f"{k}: {v}")
+    try:
+        await asyncio.to_thread(append_submission, submission_data)
+    except Exception as e:
+        print("Google Sheets error:", e)
 
     await message.answer(
         "Дякую!\n"
