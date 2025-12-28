@@ -4,6 +4,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram.filters import CommandStart
 from dotenv import load_dotenv
+from handlers.submission import router as submission_router
 
 from keyboards.submission import submission_type_keyboard
 
@@ -27,6 +28,8 @@ async def main():
     dp = Dispatcher()
 
     dp.message.register(start_handler, CommandStart())
+    dp.include_router(submission_router)
+    print(f"TOKEN: {BOT_TOKEN}")
 
     await dp.start_polling(bot)
 
