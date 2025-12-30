@@ -54,10 +54,33 @@ async def start_submission(callback: CallbackQuery, state: FSMContext):
 
 # Отримання вірша
 @router.message(SubmissionStates.waiting_for_poem)
-async def receive_poem(message: Message, state: FSMContext):
-    await state.update_data(
-        work_content=message.text
-    )
+async def receive_content(message: Message, state: FSMContext):
+    content_value = None
+
+    # 📝 Текст
+    if message.text:
+        content_value = f"text:{message.text}"
+
+    # 🖼 Фото
+    elif message.photo:
+        file_id = message.photo[-1].file_id
+        content_value = f"photo:{file_id}"
+
+    # 🎵 Аудіо
+    elif message.audio:
+        content_value = f"audio:{message.audio.file_id}"
+
+    # 📎 Документ
+    elif message.document:
+        content_value = f"document:{message.document.file_id}"
+
+    else:
+        await message.answer(
+            "Будь ласка, надішли текст, фото, аудіо або файл 🙏"
+        )
+        return
+
+    await state.update_data(work_content=content_value)
 
     await message.answer(
         "Ми отримали твою творчість!\n"
@@ -65,6 +88,7 @@ async def receive_poem(message: Message, state: FSMContext):
     )
 
     await state.set_state(SubmissionStates.waiting_for_name)
+
 
 
 # Отримання імені
@@ -85,7 +109,6 @@ async def receive_name(message: Message, state: FSMContext):
 @router.message(SubmissionStates.waiting_for_socials)
 async def receive_socials(message: Message, state: FSMContext):
     await state.update_data(social_links=message.text)
-
     data = await state.get_data()
 
     submission_data = {
@@ -99,10 +122,17 @@ async def receive_socials(message: Message, state: FSMContext):
         "decision_date": ""
     }
 
-    try:
-        await asyncio.to_thread(append_submission, submission_data)
-    except Exception as e:
-        print("Google Sheets error:", e)
+    success = await asyncio.to_thread(append_submission, submission_data)
+
+    if not success:
+        await message.answer(
+            "Схоже, цю роботу вже надсилали раніше 🤍\n"
+            "Ми не можемо прийняти один і той самий твір двічі.\n\n"
+            "Якщо хочеш — надішли іншу роботу,\n"
+            "або трохи відредагуй цю й спробуй ще раз ✨"
+        )
+        await state.clear()
+        return
 
     await message.answer(
         "Дякую!\n"
@@ -111,3 +141,4 @@ async def receive_socials(message: Message, state: FSMContext):
     )
 
     await state.clear()
+

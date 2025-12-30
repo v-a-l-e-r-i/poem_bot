@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from handlers.submission import router as submission_router
 
 from keyboards.submission import submission_type_keyboard
+from services.status_notifier import process_status_updates
 
 load_dotenv()
 
@@ -29,6 +30,14 @@ async def main():
 
     dp.message.register(start_handler, CommandStart())
     dp.include_router(submission_router)
+
+    async def scheduler():
+        while True:
+            await process_status_updates(bot)
+            await asyncio.sleep(60)  # раз на 1 годину
+
+    asyncio.create_task(scheduler())
+
 
     await dp.start_polling(bot)
 
