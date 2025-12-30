@@ -1,10 +1,58 @@
+from datetime import datetime
+
 import gspread
 from gspread.utils import ValueInputOption
+from services.content_hash import make_content_hash
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+def get_worksheet():
+    """
+    Повертає worksheet Google Sheets
+    """
+    gc = gspread.service_account(os.getenv("SERVICE_ACCOUNT_FILE"))
+    sh = gc.open_by_key(os.getenv("SPREADSHEET_ID"))
+    ws = sh.sheet1
+    return ws
+
+
+# ─────────────────────────────────────────────
+# 🔁 ПЕРЕВІРКА НА ДУБЛІКАТ КОНТЕНТУ
+# ─────────────────────────────────────────────
+
+def content_exists(content_hash: str) -> bool:
+    """
+    Перевіряє, чи вже існує такий content_hash у таблиці
+    Колонка I (9) — content_hash
+    """
+    ws = get_worksheet()
+
+    try:
+        hashes = ws.col_values(9)[1:]  # без заголовка
+        return content_hash in hashes
+    except Exception as e:
+        print("❌ Error checking duplicates:", e)
+        return False
+
+
+# ─────────────────────────────────────────────
+# 📝 ЗАПИС НОВОЇ РОБОТИ
+# ─────────────────────────────────────────────
 
 def append_submission(submission_data: dict):
-    gc = gspread.service_account("service_account.json")
-    sh = gc.open_by_key("1cEwVqRIuimqNKGlnZut-X07DeLSYffLRPNDf0EAjDtc")
-    ws = sh.sheet1
+    """
+    Додає новий рядок у таблицю
+    Очікує submission_data з ключами за ТЗ
+    """
+    ws = get_worksheet()
+
+    content_hash = make_content_hash(submission_data["work_content"])
+
+    # 🔒 Захист від дублікатів
+    if content_exists(content_hash):
+        return False
 
     row = [
         submission_data["user_id"],
@@ -15,8 +63,41 @@ def append_submission(submission_data: dict):
         submission_data["submit_date"],
         submission_data["status"],
         submission_data["decision_date"],
+        content_hash,
     ]
 
-    ws.append_row(row)
+    try:
+        ws.append_row(
+            row,
+            value_input_option=ValueInputOption.user_entered
+        )
+        return True
+
+    except Exception as e:
+        print("❌ Error appending submission:", e)
+        return False
+
+
+# ─────────────────────────────────────────────
+# ✏️ ОНОВЛЕННЯ decision_date
+# ─────────────────────────────────────────────
+
+def update_decision_date(row_index: int):
+    """
+    Записує decision_date після відправки повідомлення користувачу
+    Колонка H (8)
+    """
+    ws = get_worksheet()
+
+    try:
+        ws.update_cell(
+            row_index,
+            8,
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
+        print(f"🕒 decision_date updated for row {row_index}")
+
+    except Exception as e:
+        print("❌ Error updating decision_date:", e)
 
 
