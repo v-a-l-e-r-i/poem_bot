@@ -10,37 +10,70 @@ logger = setup_logger()
 
 
 async def process_status_updates(bot):
+    logger.info("Processing status updates started")
+
     updates = await asyncio.to_thread(lambda: list(check_statuses_and_update()))
+    logger.info("Found %d updates to process", len(updates))
 
     for item in updates:
-        user_id = item.get("user_id")
-        if not user_id:
-            continue
-
+        user_id = item["user_id"]
         status = item["status"]
         row_index = item["row_index"]
 
-        if status == "accepted":
-            text = (
-                "Вітаємо тебе, авторе! 🫶🏻\n"
-                "Твоя творчість буде у каналі Провулку!\n"
-                "Публікація може зайняти від однієї до трьох діб.\n"
-                "Дякуємо!"
-            )
-        else:
-            text = (
-                "На жаль, твій твір не було прийнято.\n"
-                "Проте не журися — наступного разу все вийде!"
-            )
+        logger.info(
+            "Sending status notification to user_id=%s (status=%s)",
+            user_id,
+            status
+        )
 
         try:
-            await bot.send_message(user_id, text)
-        except Exception as e:
-            logger.error("Telegram send error", exc_info=e)
+            if status == "accepted":
+                text = (
+                    "Вітаємо тебе, авторе! 🫶🏻\n"
+                    "Твоя творчість буде у каналі Провулку!\n"
+                    "Дякуємо!"
+                )
+            else:
+                text = (
+                    "На жаль, твій твір не було прийнято.\n"
+                    "Проте не журися — наступного разу все вийде!"
+                )
 
+            await bot.send_message(user_id, text)
+
+            logger.info(
+                "Message successfully sent to user_id=%s",
+                user_id
+            )
+
+        except Exception as e:
+            logger.error(
+                "Failed to send message to user_id=%s",
+                user_id,
+                exc_info=e
+            )
+            continue
+
+        try:
+            await asyncio.to_thread(update_decision_date, row_index)
+            logger.info(
+                "decision_date updated for row %d",
+                row_index
+            )
+        except Exception as e:
+            logger.error(
+                "Failed to update decision_date for row %d",
+                row_index,
+                exc_info=e
+            )
 
         # оновлюємо decision_date
         await asyncio.to_thread(update_decision_date, row_index)
+
+    logger.info("Processing status updates finished")
+
+
+
 
 
 def update_decision_date(row_index: int):
