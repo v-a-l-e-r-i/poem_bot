@@ -6,8 +6,13 @@ from aiogram.filters import CommandStart
 from dotenv import load_dotenv
 from handlers.submission import router as submission_router
 
-from keyboards.submission import submission_type_keyboard
+from keyboards.submission import submission_type_keyboard, send_work_keyboard
 from services.status_notifier import process_status_updates
+
+from utils.logger import setup_logger
+
+logger = setup_logger()
+
 
 load_dotenv()
 
@@ -20,8 +25,10 @@ async def start_handler(message: Message):
         "Надішли нам свою творчість ✨\n"
         "(вірш, верлібр, проза, візуальне мистецтво)"
         "Оберіть, що саме ви хочете нам надіслати:",
-        reply_markup=submission_type_keyboard()
+        reply_markup=send_work_keyboard()
     )
+    logger.info("Bot started 🚀")
+
 
 
 async def main():

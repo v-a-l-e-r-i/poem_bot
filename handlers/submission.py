@@ -5,11 +5,11 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from datetime import datetime
 
+from keyboards.submission import submission_type_keyboard, send_work_keyboard
 from states.submission import SubmissionStates
 
 from services.google_sheets import append_submission
 import gspread
-
 
 router = Router()
 
@@ -35,6 +35,19 @@ CONTENT_TYPES = {
         "type": "other"
     }
 }
+
+
+@router.callback_query(lambda c: c.data == "start_submission")
+async def restart_submission(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+
+    await callback.message.answer(
+        "Обери, що саме ти хочеш нам надіслати ✨",
+        reply_markup=submission_type_keyboard()
+    )
+
+    await callback.answer()
+
 
 # Натискання кнопки "Надіслати поезію"
 @router.callback_query(lambda c: c.data in CONTENT_TYPES)
@@ -129,7 +142,8 @@ async def receive_socials(message: Message, state: FSMContext):
             "Схоже, цю роботу вже надсилали раніше 🤍\n"
             "Ми не можемо прийняти один і той самий твір двічі.\n\n"
             "Якщо хочеш — надішли іншу роботу,\n"
-            "або трохи відредагуй цю й спробуй ще раз ✨"
+            "або трохи відредагуй цю й спробуй ще раз ✨",
+            reply_markup=send_work_keyboard()
         )
         await state.clear()
         return
@@ -137,7 +151,8 @@ async def receive_socials(message: Message, state: FSMContext):
     await message.answer(
         "Дякую!\n"
         "В найближчому часі ми повідомимо тебе!\n"
-        "До нових зустрічей, друже 🫶🏻"
+        "До нових зустрічей, друже 🫶🏻",
+        reply_markup=send_work_keyboard()
     )
 
     await state.clear()
