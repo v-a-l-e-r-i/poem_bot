@@ -1,15 +1,25 @@
+import os
+
 import gspread
 from utils.logger import setup_logger
+from dotenv import load_dotenv
 
+load_dotenv()
 logger = setup_logger()
 
+def get_worksheet():
+    """
+    Повертає worksheet Google Sheets
+    """
+    gc = gspread.service_account(os.getenv("SERVICE_ACCOUNT_FILE"))
+    sh = gc.open_by_key(os.getenv("SPREADSHEET_ID"))
+    ws = sh.sheet1
+    return ws
 
 def check_statuses_and_update():
     logger.info("Status check started")
 
-    gc = gspread.service_account("service_account.json")
-    sh = gc.open("Провулок")
-    ws = sh.sheet1
+    ws = get_worksheet()
 
     rows = ws.get_all_records()
     logger.info("Fetched %d rows from Google Sheets", len(rows))
