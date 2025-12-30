@@ -1,7 +1,12 @@
 import asyncio
 from datetime import datetime
+
+from keyboards.submission import send_work_keyboard
 from services.status_checker import check_statuses_and_update
 from gspread.utils import ValueInputOption
+from utils.logger import setup_logger
+
+logger = setup_logger()
 
 
 async def process_status_updates(bot):
@@ -31,7 +36,8 @@ async def process_status_updates(bot):
         try:
             await bot.send_message(user_id, text)
         except Exception as e:
-            print("Telegram send error:", e)
+            logger.error("Telegram send error", exc_info=e)
+
 
         # оновлюємо decision_date
         await asyncio.to_thread(update_decision_date, row_index)

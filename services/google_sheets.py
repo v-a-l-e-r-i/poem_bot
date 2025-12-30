@@ -5,6 +5,10 @@ from gspread.utils import ValueInputOption
 from services.content_hash import make_content_hash
 from dotenv import load_dotenv
 import os
+from utils.logger import setup_logger
+
+logger = setup_logger()
+
 
 load_dotenv()
 
@@ -33,7 +37,7 @@ def content_exists(content_hash: str) -> bool:
         hashes = ws.col_values(9)[1:]  # без заголовка
         return content_hash in hashes
     except Exception as e:
-        print("❌ Error checking duplicates:", e)
+        logger.error("Error checking duplicates", exc_info=e)
         return False
 
 
@@ -52,6 +56,7 @@ def append_submission(submission_data: dict):
 
     # 🔒 Захист від дублікатів
     if content_exists(content_hash):
+        logger.warning("Duplicate content detected, skipping insert")
         return False
 
     row = [
@@ -71,10 +76,11 @@ def append_submission(submission_data: dict):
             row,
             value_input_option=ValueInputOption.user_entered
         )
+        logger.info("Submission appended to Google Sheets")
         return True
 
     except Exception as e:
-        print("❌ Error appending submission:", e)
+        logger.error("Error appending submission", exc_info=e)
         return False
 
 
@@ -98,6 +104,6 @@ def update_decision_date(row_index: int):
         print(f"🕒 decision_date updated for row {row_index}")
 
     except Exception as e:
-        print("❌ Error updating decision_date:", e)
+        logger.error("Error updating decision_date:", exc_info=e)
 
 

@@ -11,3 +11,10 @@ def submission_type_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="✨ Надіслати інше", callback_data="send_other")],
         ]
     )
+
+def send_work_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="➕ Надіслати роботу", callback_data="start_submission")]
+        ]
+    )
