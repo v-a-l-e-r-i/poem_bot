@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 
 from keyboards.submission import send_work_keyboard
+from services.google_auth import get_gspread_client
 from services.status_checker import check_statuses_and_update
 from gspread.utils import ValueInputOption
 from utils.logger import setup_logger
@@ -80,7 +81,7 @@ def update_decision_date(row_index: int):
     import gspread
     from datetime import datetime
 
-    gc = gspread.service_account("service_account.json")
+    gc = get_gspread_client()
     sh = gc.open_by_key("1cEwVqRIuimqNKGlnZut-X07DeLSYffLRPNDf0EAjDtc")
     ws = sh.sheet1
 
