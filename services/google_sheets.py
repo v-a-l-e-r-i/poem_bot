@@ -16,7 +16,7 @@ def get_worksheet():
     """
     Повертає worksheet Google Sheets
     """
-    gc = gspread.service_account(os.getenv("SERVICE_ACCOUNT_FILE"))
+    gc = gspread.service_account(os.getenv("SERVICE_ACCOUNT"))
     sh = gc.open_by_key(os.getenv("SPREADSHEET_ID"))
     ws = sh.sheet1
     return ws
