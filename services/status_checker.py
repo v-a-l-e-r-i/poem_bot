@@ -1,6 +1,8 @@
 import os
 
 import gspread
+
+from services.google_auth import get_gspread_client
 from utils.logger import setup_logger
 from dotenv import load_dotenv
 
@@ -11,7 +13,7 @@ def get_worksheet():
     """
     Повертає worksheet Google Sheets
     """
-    gc = gspread.service_account(os.getenv("SERVICE_ACCOUNT"))
+    gc = get_gspread_client()
     sh = gc.open_by_key(os.getenv("SPREADSHEET_ID"))
     ws = sh.sheet1
     return ws
