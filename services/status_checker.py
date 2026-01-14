@@ -25,11 +25,12 @@ def check_statuses_and_update():
 
     rows = ws.get_all_records()
     logger.info("Fetched %d rows from Google Sheets", len(rows))
+    VALID_STATUSES = {"pending", "accepted", "rejected"}
 
     for index, row in enumerate(rows, start=2):
         user_id = row.get("user_id")
-        status = row.get("status")
-        decision_date = row.get("decision_date")
+        status = str(row.get("status", "")).strip().lower()
+        decision_date = str(row.get("decision_date", "")).strip()
 
         if not user_id:
             logger.warning("Row %d skipped: missing user_id", index)
@@ -43,7 +44,15 @@ def check_statuses_and_update():
             )
             continue
 
-        if status not in ("accepted", "rejected"):
+        if status not in VALID_STATUSES:
+            logger.warning(
+                "Invalid status value: %r at row %s",
+                row.get("status"),
+                index
+            )
+            continue
+
+        if status in ("accepted", "rejected") and decision_date == "":
             logger.debug(
                 "Row %d skipped: status=%s",
                 index,
