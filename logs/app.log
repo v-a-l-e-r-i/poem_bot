@@ -99,3 +99,19 @@
 2026-01-12 16:20:39 | INFO | poem_bot | Message successfully sent to user_id=8590711455
 2026-01-12 16:20:42 | INFO | poem_bot | decision_date updated for row 3
 2026-01-12 16:20:45 | INFO | poem_bot | Processing status updates finished
+2026-01-14 18:57:51 | INFO | poem_bot | Processing status updates started
+2026-01-14 18:57:51 | INFO | poem_bot | Status check started
+2026-01-14 18:57:54 | INFO | poem_bot | Fetched 13 rows from Google Sheets
+2026-01-14 18:57:54 | INFO | poem_bot | Status check finished
+2026-01-14 18:57:54 | INFO | poem_bot | Found 0 updates to process
+2026-01-14 18:57:54 | INFO | poem_bot | Processing status updates finished
+2026-01-14 18:58:54 | INFO | poem_bot | Processing status updates started
+2026-01-14 18:58:54 | INFO | poem_bot | Status check started
+2026-01-14 18:58:58 | INFO | poem_bot | Fetched 13 rows from Google Sheets
+2026-01-14 18:58:58 | INFO | poem_bot | Row 14 ready for notification (user_id=8590711455, status=rejected)
+2026-01-14 18:58:58 | INFO | poem_bot | Status check finished
+2026-01-14 18:58:58 | INFO | poem_bot | Found 1 updates to process
+2026-01-14 18:58:58 | INFO | poem_bot | Sending status notification to user_id=8590711455 (status=rejected)
+2026-01-14 18:58:58 | INFO | poem_bot | Message successfully sent to user_id=8590711455
+2026-01-14 18:59:01 | INFO | poem_bot | decision_date updated for row 14
+2026-01-14 18:59:04 | INFO | poem_bot | Processing status updates finished
