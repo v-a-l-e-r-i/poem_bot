@@ -1,4 +1,5 @@
 import asyncio
+import os
 from datetime import datetime
 
 from keyboards.submission import send_work_keyboard
@@ -9,6 +10,14 @@ from utils.logger import setup_logger
 
 logger = setup_logger()
 
+def get_worksheet():
+    """
+    Повертає worksheet Google Sheets
+    """
+    gc = get_gspread_client()
+    sh = gc.open_by_key(os.getenv("SPREADSHEET_ID"))
+    ws = sh.sheet1
+    return ws
 
 async def process_status_updates(bot):
     logger.info("Processing status updates started")
@@ -78,15 +87,12 @@ async def process_status_updates(bot):
 
 
 def update_decision_date(row_index: int):
-    import gspread
     from datetime import datetime
 
-    gc = get_gspread_client()
-    sh = gc.open_by_key("1cEwVqRIuimqNKGlnZut-X07DeLSYffLRPNDf0EAjDtc")
-    ws = sh.sheet1
+    ws = get_worksheet()
 
     ws.update_cell(
         row_index,
-        8,  # decision_date column (H)
+        8,  # decision date column (H)
         datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
