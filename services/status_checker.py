@@ -52,7 +52,7 @@ def check_statuses_and_update():
             )
             continue
 
-        if status not in ("accepted", "rejected") and decision_date != "":
+        if status in ("accepted", "rejected") and decision_date != "":
             logger.debug(
                 "Row %d skipped: status=%s",
                 index,
