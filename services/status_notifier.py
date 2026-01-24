@@ -1,6 +1,10 @@
 import asyncio
 import os
+import random
+import time
 from datetime import datetime
+
+from gspread.exceptions import APIError
 
 from keyboards.submission import send_work_keyboard
 from services.google_auth import get_gspread_client
@@ -10,14 +14,30 @@ from utils.logger import setup_logger
 
 logger = setup_logger()
 
-def get_worksheet():
-    """
-    Повертає worksheet Google Sheets
-    """
+def get_worksheet(retries: int = 3):
+    spreadsheet_id = os.getenv("SPREADSHEET_ID")
+    if not spreadsheet_id:
+        raise RuntimeError("SPREADSHEET_ID is not set")
+
     gc = get_gspread_client()
-    sh = gc.open_by_key(os.getenv("SPREADSHEET_ID"))
-    ws = sh.sheet1
-    return ws
+
+    for attempt in range(1, retries + 1):
+        try:
+            sh = gc.open_by_key(spreadsheet_id)
+            ws = sh.sheet1
+            return ws
+
+        except APIError as e:
+            logger.warning(
+                "Google Sheets API error on attempt %s/%s: %s",
+                attempt, retries, e
+            )
+
+            if attempt == retries:
+                raise
+
+            sleep_time = 2 ** attempt + random.uniform(0, 1)
+            time.sleep(sleep_time)
 
 async def process_status_updates(bot):
     logger.info("Processing status updates started")

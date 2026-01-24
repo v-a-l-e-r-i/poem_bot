@@ -8,8 +8,12 @@ from datetime import datetime
 from keyboards.submission import submission_type_keyboard, send_work_keyboard
 from states.submission import SubmissionStates
 
-from services.google_sheets import append_submission
+from services.google_sheets import append_submission, append_submission_safe
 import gspread
+
+from utils.logger import setup_logger
+
+logger = setup_logger()
 
 router = Router()
 
@@ -135,7 +139,13 @@ async def receive_socials(message: Message, state: FSMContext):
         "decision_date": ""
     }
 
-    success = await asyncio.to_thread(append_submission, submission_data)
+    try:
+        success = await asyncio.to_thread(
+            append_submission_safe,
+            submission_data
+        )
+    except Exception as e:
+        logger.exception("Failed to save submission to Google Sheets")
 
     if not success:
         await message.answer(
