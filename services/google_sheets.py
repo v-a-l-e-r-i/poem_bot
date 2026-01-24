@@ -1,6 +1,9 @@
+import random
+import time
 from datetime import datetime
 
 import gspread
+from gspread.exceptions import APIError
 from gspread.utils import ValueInputOption
 from services.content_hash import make_content_hash
 from dotenv import load_dotenv
@@ -14,14 +17,26 @@ logger = setup_logger()
 
 load_dotenv()
 
-def get_worksheet():
-    """
-    Повертає worksheet Google Sheets
-    """
+def get_worksheet(retries: int = 3):
+    spreadsheet_id = os.getenv("SPREADSHEET_ID")
+    if not spreadsheet_id:
+        raise RuntimeError("SPREADSHEET_ID is not set")
+
     gc = get_gspread_client()
-    sh = gc.open_by_key(os.getenv("SPREADSHEET_ID"))
-    ws = sh.sheet1
-    return ws
+
+    for attempt in range(1, retries + 1):
+        try:
+            sh = gc.open_by_key(spreadsheet_id)
+            ws = sh.sheet1
+            return ws
+
+        except APIError as e:
+            logger.warning(
+                f"Google Sheets API error (attempt {attempt}/{retries}): {e}"
+            )
+            if attempt == retries:
+                raise
+            time.sleep(2 ** attempt + random.random())
 
 
 # ─────────────────────────────────────────────
@@ -109,3 +124,12 @@ def update_decision_date(row_index: int):
         logger.error("Error updating decision_date:", exc_info=e)
 
 
+def append_submission_safe(submission_data: dict) -> bool:
+    try:
+        return append_submission(submission_data)
+    except APIError as e:
+        logger.exception("Google Sheets API error while appending submission")
+        return False
+    except Exception:
+        logger.exception("Unexpected error while appending submission")
+        return False
