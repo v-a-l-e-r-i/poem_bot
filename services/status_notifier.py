@@ -34,7 +34,8 @@ def get_worksheet(retries: int = 3):
             )
 
             if attempt == retries:
-                raise
+                logger.error("Google Sheets unavailable after retries")
+                return []
 
             sleep_time = 2 ** attempt + random.uniform(0, 1)
             time.sleep(sleep_time)
@@ -42,7 +43,12 @@ def get_worksheet(retries: int = 3):
 async def process_status_updates(bot):
     logger.info("Processing status updates started")
 
-    updates = await asyncio.to_thread(lambda: list(check_statuses_and_update()))
+    try:
+        updates = await asyncio.to_thread(lambda: list(check_statuses_and_update()))
+    except Exception as e:
+        logger.error("Failed to check statuses", exc_info=e)
+        return
+
     logger.info("Found %d updates to process", len(updates))
 
     for item in updates:
