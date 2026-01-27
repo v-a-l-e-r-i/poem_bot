@@ -4,9 +4,9 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram.filters import CommandStart
 from dotenv import load_dotenv
-from handlers.submission import router as submission_router
+from handlers.user.submission import router as submission_router
 
-from keyboards.submission import submission_type_keyboard, send_work_keyboard
+from keyboards.submission import send_work_keyboard
 from services.status_notifier import process_status_updates
 
 from utils.logger import setup_logger
@@ -40,8 +40,12 @@ async def main():
 
     async def scheduler():
         while True:
-            await process_status_updates(bot)
-            await asyncio.sleep(60)  # раз на 1 годину
+            try:
+                await process_status_updates(bot)
+            except Exception as e:
+                logger.exception("Scheduler error (Google Sheets may be unavailable)")
+            finally:
+                await asyncio.sleep(3600)
 
     asyncio.create_task(scheduler())
 

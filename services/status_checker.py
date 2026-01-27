@@ -32,7 +32,8 @@ def get_worksheet(retries: int = 3):
             )
 
             if attempt == retries:
-                raise
+                logger.error("Google Sheets unavailable after retries")
+                return []
 
             sleep_time = 2 ** attempt + random.uniform(0, 1)
             time.sleep(sleep_time)

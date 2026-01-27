@@ -31,12 +31,13 @@ def get_worksheet(retries: int = 3):
             return ws
 
         except APIError as e:
-            logger.warning(
-                f"Google Sheets API error (attempt {attempt}/{retries}): {e}"
-            )
             if attempt == retries:
-                raise
-            time.sleep(2 ** attempt + random.random())
+                logger.error("Google Sheets unavailable after retries")
+                return []
+
+            wait = 5 * (attempt + 1) + random.uniform(0, 3)
+            logger.warning(f"Retry {attempt + 1}/3, waiting {wait:.1f}s")
+            time.sleep(wait)
 
 
 # ─────────────────────────────────────────────
