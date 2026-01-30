@@ -4,7 +4,8 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram.filters import CommandStart
 from dotenv import load_dotenv
-from handlers.user.submission import router as submission_router
+
+from handlers.router import root_router
 
 from keyboards.submission import send_work_keyboard
 from services.status_notifier import process_status_updates
@@ -36,7 +37,8 @@ async def main():
     dp = Dispatcher()
 
     dp.message.register(start_handler, CommandStart())
-    dp.include_router(submission_router)
+    dp.include_router(root_router)
+
 
     async def scheduler():
         while True:

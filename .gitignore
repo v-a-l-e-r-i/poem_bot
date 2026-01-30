@@ -2,5 +2,6 @@
 .venv
 .env
 service_account.json
-
+logs
+*.log
 /gspreadgit add .
