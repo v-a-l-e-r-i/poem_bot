@@ -32,7 +32,7 @@ CONTENT_TYPES = {
     },
     "send_music": {
         "label": "музику 🎵",
-        "type": "music"
+        "type": "audio"
     },
     "send_other": {
         "label": "інше ✨",
@@ -86,6 +86,9 @@ async def receive_content(message: Message, state: FSMContext):
     # 🎵 Аудіо
     elif message.audio:
         content_value = f"audio:{message.audio.file_id}"
+
+    elif message.voice:
+        content_value = f"voice:{message.voice.file_id}"
 
     # 📎 Документ
     elif message.document:
