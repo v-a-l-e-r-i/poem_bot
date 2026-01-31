@@ -39,7 +39,7 @@ This bot is designed to automate the submission of creative works (poetry, prose
 ## **🚀 Installation and Setup**
 
 1. **Clone the repository:**  
-   git clone \[https://github.com/your-username/provulok-bot.git\](https://github.com/your-username/provulok-bot.git)  
+   git clone [https://github.com/v-a-l-e-r-i/poem_bot.git](https://github.com/v-a-l-e-r-i/poem_bot.git)
    cd provulok-bot
 
 2. **Create a virtual environment and activate it:**  

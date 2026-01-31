@@ -163,7 +163,7 @@ async def receive_socials(message: Message, state: FSMContext):
 
     await message.answer(
         "Дякую!\n"
-        "В найближчому часі ми повідомимо тебе!\n"
+        "В найближчому часі ми повідомимо тобі!\n"
         "До нових зустрічей, друже 🫶🏻",
         reply_markup=send_work_keyboard()
     )
