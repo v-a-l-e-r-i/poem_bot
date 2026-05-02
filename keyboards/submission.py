@@ -18,3 +18,13 @@ def send_work_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="➕ Надіслати роботу", callback_data="start_submission")]
         ]
     )
+
+def permission_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Так", callback_data="perm_yes"),
+                InlineKeyboardButton(text="❌ Ні", callback_data="perm_no")
+            ]
+        ]
+    )

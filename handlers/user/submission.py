@@ -5,7 +5,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from datetime import datetime
 
-from keyboards.submission import submission_type_keyboard, send_work_keyboard
+from keyboards.submission import submission_type_keyboard, send_work_keyboard, permission_keyboard
 from states.submission import SubmissionStates
 
 from services.google_sheets import append_submission, append_submission_safe
@@ -62,10 +62,12 @@ async def start_submission(callback: CallbackQuery, state: FSMContext):
         content_type=content["type"]
     )
 
-    await callback.message.answer(
-        f"Надішли свою {content['label']}"
-    )
+    msg_text = f"Надішли свою {content['label']}"
+    # Додаємо підказку для візуального мистецтва
+    if content["type"] == "visual":
+        msg_text += "\n(Рекомендуємо надсилати ілюстрацію у HD якості файлом png/jpg 🖼️)"
 
+    await callback.message.answer(msg_text)
     await state.set_state(SubmissionStates.waiting_for_poem)
     await callback.answer()
 
@@ -74,42 +76,39 @@ async def start_submission(callback: CallbackQuery, state: FSMContext):
 async def receive_content(message: Message, state: FSMContext):
     content_value = None
 
-    # 📝 Текст
     if message.text:
         content_value = f"text:{message.text}"
-
-    # 🖼 Фото
     elif message.photo:
         file_id = message.photo[-1].file_id
         content_value = f"photo:{file_id}"
-
-    # 🎵 Аудіо
     elif message.audio:
         content_value = f"audio:{message.audio.file_id}"
-
     elif message.voice:
         content_value = f"voice:{message.voice.file_id}"
-
-    # 📎 Документ
     elif message.document:
         content_value = f"document:{message.document.file_id}"
-
     else:
-        await message.answer(
-            "Будь ласка, надішли текст, фото, аудіо або файл 🙏"
-        )
+        await message.answer("Будь ласка, надішли текст, фото, аудіо або файл 🙏")
         return
 
     await state.update_data(work_content=content_value)
 
     await message.answer(
         "Ми отримали твою творчість!\n"
+        "Тепер напиши назву свого твору 📝\n"
+        "(Якщо назви немає, напиши \"-\")"
+    )
+    await state.set_state(SubmissionStates.waiting_for_title)
+
+@router.message(SubmissionStates.waiting_for_title)
+async def receive_title(message: Message, state: FSMContext):
+    await state.update_data(work_title=message.text)
+
+    await message.answer(
+        "Супер!\n"
         "Тепер напиши, як тебе підписати 🥰"
     )
-
     await state.set_state(SubmissionStates.waiting_for_name)
-
-
 
 # Отримання імені
 @router.message(SubmissionStates.waiting_for_name)
@@ -126,17 +125,38 @@ async def receive_name(message: Message, state: FSMContext):
 
 
 # Отримання соцмереж
+# Змінюємо запит соцмереж, щоб з'явилися кнопки
 @router.message(SubmissionStates.waiting_for_socials)
 async def receive_socials(message: Message, state: FSMContext):
     await state.update_data(social_links=message.text)
+
+    await message.answer(
+        "Чи дозволяєте Ви опублікувати свою роботу в наших соціальних мережах, окрім Telegram-каналу?",
+        reply_markup=permission_keyboard()
+    )
+    await state.set_state(SubmissionStates.waiting_for_permission)
+
+@router.callback_query(SubmissionStates.waiting_for_permission)
+async def receive_permission(callback: CallbackQuery, state: FSMContext):
+    # Відсіюємо будь-які інші кнопки, крім Так і Ні
+    if callback.data not in ["perm_yes", "perm_no"]:
+        return
+
+    # Визначаємо символ
+    permission_symbol = "✅" if callback.data == "perm_yes" else "❌"
+
+    # Зберігаємо символ в стан
+    await state.update_data(publish_permission=permission_symbol)
     data = await state.get_data()
 
     submission_data = {
-        "user_id": message.from_user.id,
-        "username": message.from_user.username or "",
+        "user_id": callback.from_user.id,
+        "username": callback.from_user.username or "",
         "work_content": data.get("work_content"),
+        "work_title": data.get("work_title"),
         "author_name": data.get("author_name"),
         "social_links": data.get("social_links"),
+        "publish_permission": data.get("publish_permission"),
         "submit_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "status": "pending",
         "decision_date": ""
@@ -149,9 +169,10 @@ async def receive_socials(message: Message, state: FSMContext):
         )
     except Exception as e:
         logger.exception("Failed to save submission to Google Sheets")
+        success = False
 
     if not success:
-        await message.answer(
+        await callback.message.answer(
             "Схоже, цю роботу вже надсилали раніше 🤍\n"
             "Ми не можемо прийняти один і той самий твір двічі.\n\n"
             "Якщо хочеш — надішли іншу роботу,\n"
@@ -159,9 +180,10 @@ async def receive_socials(message: Message, state: FSMContext):
             reply_markup=send_work_keyboard()
         )
         await state.clear()
+        await callback.answer()
         return
 
-    await message.answer(
+    await callback.message.answer(
         "Дякую!\n"
         "В найближчому часі ми повідомимо тобі!\n"
         "До нових зустрічей, друже 🫶🏻",
@@ -169,4 +191,4 @@ async def receive_socials(message: Message, state: FSMContext):
     )
 
     await state.clear()
-
+    await callback.answer() # Прибирає годинник завантаження на кнопці

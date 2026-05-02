@@ -22,10 +22,13 @@ async def view_images(callback: CallbackQuery):
         await callback.answer()
         return
 
-
+    # ДОДАНО: Шукаємо і photo, і document
     images = [
         r for r in rows
-        if r.get("work_content").split(":")[0] == "photo" and r.get("work_content")
+        if r.get("work_content") and (
+                str(r.get("work_content")).startswith("photo:") or
+                str(r.get("work_content")).startswith("document:")
+        )
     ]
 
     if not images:
@@ -35,38 +38,46 @@ async def view_images(callback: CallbackQuery):
 
     try:
         for row in images:
-            # Отримуємо "сирий" контент
             content = row.get("work_content", "")
-
-            # Розділяємо безпечно (максимум 1 раз)
             parts = content.split(":", 1)
 
             if len(parts) < 2:
                 logger.warning(f"Incorrect data format: {content}")
                 continue
 
-            # .strip() - це головне виправлення. Воно прибирає пробіли з країв
+            content_type = parts[0]  # "photo" або "document"
             file_id = parts[1].strip()
 
-            # Логуємо, щоб бачити, що відправляємо (для відладки)
-            logger.info(f"Attempt to send photo with ID: '{file_id}'")
+            logger.info(f"Attempt to send {content_type} with ID: '{file_id}'")
 
             try:
-                await callback.bot.send_photo(
-                    chat_id=callback.from_user.id,
-                    photo=file_id,
-                    caption=f"Author: {row.get('author_name', '-')}"
-                )
-                # Робимо маленьку паузу, щоб не отримати FloodWait, якщо фото багато
+                author_caption = f"Author: {row.get('author_name', '-')}"
+
+                # РОЗГАЛУЖЕННЯ: Відправляємо або фото, або документ
+                if content_type == "photo":
+                    await callback.bot.send_photo(
+                        chat_id=callback.from_user.id,
+                        photo=file_id,
+                        caption=author_caption
+                    )
+                elif content_type == "document":
+                    await callback.bot.send_document(
+                        chat_id=callback.from_user.id,
+                        document=file_id,
+                        caption=author_caption
+                    )
+                else:
+                    logger.warning(f"Невідомий тип контенту: {content_type}")
+
+                # Робимо маленьку паузу, щоб не отримати FloodWait
                 await asyncio.sleep(0.3)
 
             except Exception as e:
-                logger.warning(f"Failed to send photo {file_id}: {e}")
-                await callback.message.answer(f"Помилка з фото автора {row.get('author_name')}")
+                logger.warning(f"Failed to send {content_type} {file_id}: {e}")
+                await callback.message.answer(f"Помилка з файлом автора {row.get('author_name')}")
 
     except Exception as e:
         logger.exception("Critical error in the sending cycle")
-
 
     await callback.answer()
 
