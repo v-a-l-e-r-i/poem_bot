@@ -11,6 +11,7 @@ from services.google_auth import get_gspread_client
 from services.status_checker import check_statuses_and_update
 from gspread.utils import ValueInputOption
 from utils.logger import setup_logger
+from aiogram.exceptions import TelegramForbiddenError
 
 logger = setup_logger()
 
@@ -40,6 +41,7 @@ def get_worksheet(retries: int = 3):
             sleep_time = 2 ** attempt + random.uniform(0, 1)
             time.sleep(sleep_time)
 
+
 async def process_status_updates(bot):
     logger.info("Processing status updates started")
 
@@ -62,10 +64,11 @@ async def process_status_updates(bot):
             status
         )
 
+        # 1. СПРОБА НАДІСЛАТИ ПОВІДОМЛЕННЯ
         try:
             if status == "accepted":
                 text = (
-                    "Вітаємо тебе, авторе! 🫶🏻\n"
+                    "Вітаємо тебе, авторе! 🥳💖\n"
                     "Твоя творчість буде у каналі Провулку!\n"
                     "Дякуємо!"
                 )
@@ -76,35 +79,27 @@ async def process_status_updates(bot):
                 )
 
             await bot.send_message(user_id, text)
+            logger.info("Message successfully sent to user_id=%s", user_id)
 
-            logger.info(
-                "Message successfully sent to user_id=%s",
-                user_id
-            )
+        except TelegramForbiddenError:
+            # Якщо юзер заблокував бота - просто фіксуємо це і ЙДЕМО ДАЛІ
+            logger.warning("Користувач %s заблокував бота. Повідомлення не надіслано.", user_id)
 
         except Exception as e:
-            logger.error(
-                "Failed to send message to user_id=%s",
-                user_id,
-                exc_info=e
-            )
+            # Тільки якщо сталася інша критична помилка мережі, перериваємо обробку цього рядка
+            logger.error("Failed to send message to user_id=%s", user_id, exc_info=e)
             continue
 
+        # 2. ОНОВЛЕННЯ ДАТИ (спрацює і при успіху, і при блокуванні)
         try:
             await asyncio.to_thread(update_decision_date, row_index)
-            logger.info(
-                "decision_date updated for row %d",
-                row_index
-            )
+            logger.info("decision_date updated for row %d", row_index)
         except Exception as e:
             logger.error(
                 "Failed to update decision_date for row %d",
                 row_index,
                 exc_info=e
             )
-
-        # оновлюємо decision_date
-        await asyncio.to_thread(update_decision_date, row_index)
 
     logger.info("Processing status updates finished")
 
