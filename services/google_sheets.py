@@ -47,12 +47,12 @@ def get_worksheet(retries: int = 3):
 def content_exists(content_hash: str) -> bool:
     """
     Перевіряє, чи вже існує такий content_hash у таблиці
-    Колонка I (9) — content_hash
+    Колонка I (11) — content_hash
     """
     ws = get_worksheet()
 
     try:
-        hashes = ws.col_values(9)[1:]  # без заголовка
+        hashes = ws.col_values(11)[1:]  # без заголовка
         return content_hash in hashes
     except Exception as e:
         logger.error("Error checking duplicates", exc_info=e)
@@ -81,8 +81,10 @@ def append_submission(submission_data: dict):
         submission_data["user_id"],
         submission_data["username"],
         submission_data["work_content"],
+        submission_data["work_title"],  # НОВА КОЛОНКА (D)
         submission_data["author_name"],
         submission_data["social_links"],
+        submission_data["publish_permission"],  # НОВА КОЛОНКА (G)
         submission_data["submit_date"],
         submission_data["status"],
         submission_data["decision_date"],
@@ -102,6 +104,7 @@ def append_submission(submission_data: dict):
         return False
 
 
+
 # ─────────────────────────────────────────────
 # ✏️ ОНОВЛЕННЯ decision_date
 # ─────────────────────────────────────────────
@@ -109,14 +112,14 @@ def append_submission(submission_data: dict):
 def update_decision_date(row_index: int):
     """
     Записує decision_date після відправки повідомлення користувачу
-    Колонка H (8)
+    Колонка H (10)
     """
     ws = get_worksheet()
 
     try:
         ws.update_cell(
             row_index,
-            8,
+            10,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
         print(f"🕒 decision_date updated for row {row_index}")

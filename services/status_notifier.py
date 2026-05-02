@@ -119,6 +119,6 @@ def update_decision_date(row_index: int):
 
     ws.update_cell(
         row_index,
-        8,  # decision date column (H)
+        10,  # decision date column (H)
         datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
