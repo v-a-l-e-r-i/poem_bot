@@ -5,3 +5,6 @@ service_account.json
 logs
 *.log
 /gspreadgit add .
+
+__pycache__/
+*.pyc
